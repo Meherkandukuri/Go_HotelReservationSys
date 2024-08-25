@@ -6,10 +6,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/config"
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/forms"
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/models"
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/render"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/config"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/forms"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/helpers"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/models"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/render"
 )
 
 // Repository is the repository type
@@ -34,8 +35,6 @@ func NewHandlers(r *Repository) {
 
 // Home is the home page handler
 func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
-	remoteIP := r.RemoteAddr
-	m.App.Session.Put(r.Context(), "remote_ip", remoteIP)
 	render.RenderTemplate(w, r, "home-page.html", &models.TemplateData{})
 }
 
@@ -97,9 +96,10 @@ func (m *Repository) ReservationJSON(w http.ResponseWriter, r *http.Request) {
 
 	output, err := json.MarshalIndent(resp, "", "   ")
 	if err != nil {
-		log.Println(err)
+		helpers.ServerError(w, err)
+		return
 	}
-	log.Println(string(output))
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(output)
 }
@@ -128,7 +128,7 @@ func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) PostMakeReservation(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Println(err)
+		helpers.ServerError(w, err)
 		return
 	}
 
@@ -164,7 +164,9 @@ func (m *Repository) PostMakeReservation(w http.ResponseWriter, r *http.Request)
 func (m *Repository) ReservationOverview(w http.ResponseWriter, r *http.Request) {
 	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
+
 		log.Println("Could  not get item from session.")
+		m.App.ErrorLog.Println("Could not get item from session")
 		m.App.Session.Put(r.Context(), "error", "No reservation data in this session is available.")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return

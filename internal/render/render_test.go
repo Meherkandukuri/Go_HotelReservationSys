@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/models"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/models"
 )
 
 func TestAddDefaultData(t *testing.T) {

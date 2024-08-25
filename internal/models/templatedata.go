@@ -1,6 +1,6 @@
 package models
 
-import "github.com/MeherKandukuri/reservationSystem_Go/internal/forms"
+import "github.com/MeherKandukuri/Go_HotelReservationSys/internal/forms"
 
 // Template Data holds any kind of data sent from handlers to templates
 type TemplateData struct {

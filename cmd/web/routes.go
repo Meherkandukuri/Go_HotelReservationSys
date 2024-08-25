@@ -3,8 +3,8 @@ package main
 import (
 	"net/http"
 
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/config"
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/handlers"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/config"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/handlers"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"

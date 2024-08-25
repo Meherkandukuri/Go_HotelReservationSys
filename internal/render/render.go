@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/config"
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/models"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/config"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/models"
 
 	"github.com/justinas/nosurf"
 )

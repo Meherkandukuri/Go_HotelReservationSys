@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/config"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/config"
 
 	"github.com/go-chi/chi"
 )

@@ -6,12 +6,13 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/config"
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/models"
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/render"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/config"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/models"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/render"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi"
@@ -29,6 +30,12 @@ func getRoutes() http.Handler {
 
 	// don't forget to change to true in Production!
 	app.InProduction = false
+
+	infoLog := log.New(os.Stdout, "[INFO]\t", log.Ldate|log.Ltime)
+	app.InfoLog = infoLog
+
+	errorLog := log.New(os.Stdout, "[Error]\t", log.Ldate|log.Ltime|log.Lshortfile)
+	app.ErrorLog = errorLog
 
 	session = scs.New()
 	session.Lifetime = 24 * time.Hour

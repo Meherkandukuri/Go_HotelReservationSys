@@ -2,13 +2,14 @@ package render
 
 import (
 	"encoding/gob"
+	"log"
 	"net/http"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/config"
-	"github.com/MeherKandukuri/reservationSystem_Go/internal/models"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/config"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/models"
 
 	"github.com/alexedwards/scs/v2"
 )
@@ -36,6 +37,12 @@ func TestMain(m *testing.M) {
 
 	// don't forget to change to true in Production!
 	testApp.InProduction = false
+
+	infoLog := log.New(os.Stdout, "[INFO]\t", log.Ldate|log.Ltime)
+	testApp.InfoLog = infoLog
+
+	errorLog := log.New(os.Stdout, "[Error]\t", log.Ldate|log.Ltime|log.Lshortfile)
+	testApp.ErrorLog = errorLog
 
 	session = scs.New()
 	session.Lifetime = 24 * time.Hour

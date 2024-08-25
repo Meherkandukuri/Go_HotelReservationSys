@@ -1,4 +1,4 @@
-module github.com/MeherKandukuri/reservationSystem_Go
+module github.com/MeherKandukuri/Go_HotelReservationSys
 
 go 1.21.4
 
