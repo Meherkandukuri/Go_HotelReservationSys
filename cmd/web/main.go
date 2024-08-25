@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/config"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/driver"
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/handlers"
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/helpers"
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/models"
@@ -25,11 +26,12 @@ var infoLog *log.Logger
 var errorLog *log.Logger
 
 func main() {
-
-	err := run()
+	db, err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer db.SQL.Close()
 
 	fmt.Println("We are starting on port number:", portNumber)
 
@@ -44,7 +46,7 @@ func main() {
 	}
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 	// Data to be available in the session
 	gob.Register(models.Reservation{})
 
@@ -64,6 +66,14 @@ func run() error {
 	session.Cookie.Secure = app.InProduction
 	app.Session = session
 
+	log.Println("Connecting to database...")
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=GoHotelReservationSystem user=postgres password=Hanuman@143")
+	if err != nil {
+		log.Fatal("No connection to database! Terminating ...")
+	}
+	// defer db.SQL.Close()
+	log.Println("Successfully connected to database.")
+
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatalln("error creating template cache", err)
@@ -71,12 +81,12 @@ func run() error {
 	app.TemplateCache = tc
 	app.UseCache = false
 
-	repo := handlers.NewRepo(&app)
+	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo)
 
 	render.NewTemplates(&app)
 
 	helpers.NewHelpers(&app)
 
-	return nil
+	return db, nil
 }

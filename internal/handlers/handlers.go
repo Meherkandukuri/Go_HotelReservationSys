@@ -7,24 +7,29 @@ import (
 	"net/http"
 
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/config"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/driver"
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/forms"
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/helpers"
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/models"
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/render"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/repository"
+	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/repository/dbrepo"
 )
 
 // Repository is the repository type
 type Repository struct {
 	App *config.AppConfig
+	DB  repository.DatabaseRepo
 }
 
 // Repo the repository used by the handlers
 var Repo *Repository
 
 // New Repo creates a new repository
-func NewRepo(a *config.AppConfig) *Repository {
+func NewRepo(a *config.AppConfig, db *driver.DB) *Repository {
 	return &Repository{
 		App: a,
+		DB: dbrepo.NewPostGresRepo(db.SQL,a),
 	}
 }
 
