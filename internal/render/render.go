@@ -27,12 +27,12 @@ func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateDa
 	return td
 }
 
-func NewTemplates(a *config.AppConfig) {
+func NewRenderer(a *config.AppConfig) {
 	app = a
 }
 
 // renderTemplate serves as a wrapper and renders a layout and a template from folder /templates to desired writer
-func RenderTemplate(w http.ResponseWriter, r *http.Request, tpml string, td *models.TemplateData) error {
+func Template(w http.ResponseWriter, r *http.Request, tpml string, td *models.TemplateData) error {
 	var tc map[string]*template.Template
 
 	if app.UseCache {
