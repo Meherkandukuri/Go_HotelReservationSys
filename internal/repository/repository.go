@@ -12,4 +12,5 @@ type DatabaseRepo interface {
 	InsertBungalowRestriction(r models.BungalowRestriction) error
 	SearchAvailibilityByDatesByBungalowID(start, end time.Time, bungalowID int) (bool, error)
 	SearchAvailabilityByDatesForAllBungalows(start, end time.Time) ([]models.Bungalow, error)
+	GetBungalowByID(id int) (models.Bungalow, error)
 }

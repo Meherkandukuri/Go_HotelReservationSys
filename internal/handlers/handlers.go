@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/config"
@@ -150,20 +151,37 @@ func (m *Repository) ReservationJSON(w http.ResponseWriter, r *http.Request) {
 // MakeReservation is the handler for the make-reservation page
 func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
 
-	var emptyReservation models.Reservation
-	data := make(map[string]interface{})
-	data["reservation"] = emptyReservation
-
-	/* we can write above three lines of code into inline statement one as follows:
-	data := map[string]{}interface{
-		"reservation":models.Reservation{},
+	res, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
+	if !ok {
+		m.App.Session.Put(r.Context(), "errror", "Cannot get reservation back from session")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
 	}
-	*/
-	// send the result or any prepared data to the template
+
+	bungalow, err := m.DB.GetBungalowByID(res.BungalowID)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Cannot find bungalow!")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	res.Bungalow.BungalowName = bungalow.BungalowName
+	m.App.Session.Put(r.Context(), "reservation", res)
+
+	sd := res.StartDate.Format("2006-01-02")
+	ed := res.EndDate.Format("2006-01-02")
+
+	stringMap := make(map[string]string)
+	stringMap["start_date"] = sd
+	stringMap["end_date"] = ed
+
+	data := make(map[string]interface{})
+	data["reservation"] = res
 	render.Template(w, r, "make-reservation-page.html",
 		&models.TemplateData{
-			Form: forms.New(nil),
-			Data: data,
+			Form:      forms.New(nil),
+			Data:      data,
+			StringMap: stringMap,
 		})
 }
 
@@ -174,16 +192,19 @@ func (m *Repository) PostMakeReservation(w http.ResponseWriter, r *http.Request)
 		helpers.ServerError(w, err)
 		return
 	}
+
 	sd := r.Form.Get("start_date")
 	ed := r.Form.Get("end_date")
 
-	layout := "2006-01-02"
+	layout := "2006-01-02 15:04:05 -0700 UTC"
 
 	startDate, err := time.Parse(layout, sd)
 	if err != nil {
+		fmt.Println("----------------------------------StartDate has error in it-------------------------:startDate:", sd)
 		helpers.ServerError(w, err)
 		return
 	}
+
 	endDate, err := time.Parse(layout, ed)
 	if err != nil {
 		helpers.ServerError(w, err)
@@ -191,6 +212,11 @@ func (m *Repository) PostMakeReservation(w http.ResponseWriter, r *http.Request)
 	}
 
 	bungalowID, err := strconv.Atoi(r.Form.Get("bungalow_id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
 	reservation := models.Reservation{
 		FullName:   r.Form.Get("full_name"),
 		Email:      r.Form.Get("email"),
@@ -202,7 +228,6 @@ func (m *Repository) PostMakeReservation(w http.ResponseWriter, r *http.Request)
 
 	form := forms.New(r.PostForm)
 
-	// form.Has("full_name", r)
 	form.Required("full_name", "email")
 	form.MinLength("full_name", 2)
 	form.IsEmail("email")
@@ -211,7 +236,7 @@ func (m *Repository) PostMakeReservation(w http.ResponseWriter, r *http.Request)
 		data := make(map[string]interface{})
 		data["reservation"] = reservation
 
-		render.Template(w, r, "make-reservation-page.html", &models.TemplateData{
+		render.Template(w, r, "make-reservation-page.tpml", &models.TemplateData{
 			Form: form,
 			Data: data,
 		})
@@ -237,16 +262,15 @@ func (m *Repository) PostMakeReservation(w http.ResponseWriter, r *http.Request)
 		helpers.ServerError(w, err)
 		return
 	}
+
 	m.App.Session.Put(r.Context(), "reservation", reservation)
 	http.Redirect(w, r, "/reservation-overview", http.StatusSeeOther)
 }
 
 // ReservationOverview displays the reservation summary page
 func (m *Repository) ReservationOverview(w http.ResponseWriter, r *http.Request) {
-	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
+	res, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
-
-		log.Println("Could  not get item from session.")
 		m.App.ErrorLog.Println("Could not get item from session")
 		m.App.Session.Put(r.Context(), "error", "No reservation data in this session is available.")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -255,9 +279,50 @@ func (m *Repository) ReservationOverview(w http.ResponseWriter, r *http.Request)
 
 	m.App.Session.Remove(r.Context(), "reservation")
 
+	bungalow, err := m.DB.GetBungalowByID(res.BungalowID)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Cannot find bungalow!")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
+	res.Bungalow.BungalowName = bungalow.BungalowName
+
 	data := make(map[string]interface{})
-	data["reservation"] = reservation
+	data["reservation"] = res
+
+	sd := res.StartDate.Format("2006-01-02")
+	ed := res.EndDate.Format("2006-01-02")
+
+	stringMap := make(map[string]string)
+	stringMap["start_date"] = sd
+	stringMap["end_date"] = ed
+
 	render.Template(w, r, "reservation-overview-page.html", &models.TemplateData{
-		Data: data,
+		Data:      data,
+		StringMap: stringMap,
 	})
+}
+
+// ChooseBungalow displays list of avaialable bungalows and lets the user choose a bungalow
+func (m *Repository) ChooseBungalow(w http.ResponseWriter, r *http.Request) {
+	exploded := strings.Split(r.RequestURI, "/")
+	bungalowID, err := strconv.Atoi(exploded[2])
+
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Missing parameter from URL")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	res, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
+	if !ok {
+
+		m.App.Session.Put(r.Context(), "error", "Cannot get reservation back from session")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	res.BungalowID = bungalowID
+	m.App.Session.Put(r.Context(), "reservation", res)
+	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+
 }

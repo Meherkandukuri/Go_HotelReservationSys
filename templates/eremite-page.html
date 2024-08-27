@@ -81,13 +81,14 @@
                 const elem = document.getElementById("reservation-dates-modal");
                 const rp = new DateRangePicker(elem, {
                     format: 'yyyy-mm-dd',
+                    minDate: new Date(),
                     showOnFocus: true,
                 })
             },
             didOpen: () => {
-                        document.getElementById('start').removeAttribute("disabled"),
-                            document.getElementById('end').removeAttribute("disabled");
-                    },
+                document.getElementById('start').removeAttribute("disabled"),
+                    document.getElementById('end').removeAttribute("disabled");
+            },
             callback: function (result) {
                 console.log("Omg Today is Saturday");
                 let form = document.getElementById("check-availability-form");

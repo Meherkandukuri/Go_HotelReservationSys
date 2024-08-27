@@ -12,7 +12,7 @@
             {{$bungalows:= index .Data "bungalows"}}
             <ul>
                 {{range $bungalows}}
-                    <li>{{.BungalowName}}</li>
+                <li><a href="/choose-bungalow/{{.ID}}">{{.BungalowName}}</a></li>
                 {{end}}
             </ul>
         </div>

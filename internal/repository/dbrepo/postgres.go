@@ -80,7 +80,7 @@ func (m *postgresDBRepo) SearchAvailibilityByDatesByBungalowID(start, end time.T
 		bungalow_restrictions
 	where
 		bungalow_id = $1
-		$2 < end_date and  $3 > start_date;
+		$2 <= end_date and  $3 >= start_date;
 	`
 
 	row := m.DB.QueryRowContext(ctx, query, bungalowID, start, end)
@@ -115,7 +115,7 @@ func (m *postgresDBRepo) SearchAvailabilityByDatesForAllBungalows(start, end tim
 		from 
 			bungalow_restrictions br
 		where 
-		$1 < br.end_date and $2 > br.start_date
+		$1 <= br.end_date and $2 >= br.start_date
 	);
 	
 	`
@@ -143,4 +143,33 @@ func (m *postgresDBRepo) SearchAvailabilityByDatesForAllBungalows(start, end tim
 	}
 
 	return bungalows, nil
+}
+
+func (m *postgresDBRepo) GetBungalowByID(id int) (models.Bungalow, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var bungalow models.Bungalow
+
+	query := `
+	select 
+	id, bungalow_name, created_at, updated_at 
+	from 
+	bungalows
+	where  
+		id = $1
+	`
+	row := m.DB.QueryRowContext(ctx, query, id)
+	err := row.Scan(
+		&bungalow.ID,
+		&bungalow.BungalowName,
+		&bungalow.CreatedAt,
+		&bungalow.UpdatedAt,
+	)
+
+	if err != nil {
+		return bungalow, err
+	}
+
+	return bungalow, nil
 }
