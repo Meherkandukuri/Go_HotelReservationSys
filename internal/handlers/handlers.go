@@ -127,15 +127,61 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 }
 
 type jsonResponse struct {
-	OK      bool   `json:"ok"`
-	Message string `json:"message"`
+	OK         bool   `json:"ok"`
+	Message    string `json:"message"`
+	BungalowID string `json:"bungalow_id"`
+	StartDate  string `json:"start_date"`
+	EndDate    string `json:"end_date"`
 }
 
 // ReservationJson is the handler for reservation-json route and return JSON
 func (m *Repository) ReservationJSON(w http.ResponseWriter, r *http.Request) {
+
+	bungalowID, err := strconv.Atoi(r.Form.Get("bungalow_id"))
+
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+	sd := r.Form.Get("start")
+	ed := r.Form.Get("end")
+
+	layout := "2006-01-02"
+	startDate, err := time.Parse(layout, sd)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	endDate, err := time.Parse(layout, ed)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	available, err := m.DB.SearchAvailibilityByDatesByBungalowID(startDate, endDate, bungalowID)
+	if err != nil {
+		helpers.ServerError(w, err)
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Error querying database",
+		}
+		output, err := json.MarshalIndent(resp, "", "   ")
+		if err != nil {
+			helpers.ServerError(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(output)
+		return
+	}
+
 	resp := jsonResponse{
-		OK:      true,
-		Message: "It's available!",
+		OK:         available,
+		Message:    "",
+		StartDate:  sd,
+		EndDate:    ed,
+		BungalowID: strconv.Itoa(bungalowID),
 	}
 
 	output, err := json.MarshalIndent(resp, "", "   ")
@@ -153,13 +199,15 @@ func (m *Repository) MakeReservation(w http.ResponseWriter, r *http.Request) {
 
 	res, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
-		m.App.Session.Put(r.Context(), "errror", "Cannot get reservation back from session")
+		fmt.Println("----------------Cannot find ReservationDetails-------------------")
+		m.App.Session.Put(r.Context(), "error", "Cannot get reservation back from session")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	bungalow, err := m.DB.GetBungalowByID(res.BungalowID)
 	if err != nil {
+		fmt.Println("----------------Cannot find BungalowDetails-------------------")
 		m.App.Session.Put(r.Context(), "error", "Cannot find bungalow!")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -200,7 +248,6 @@ func (m *Repository) PostMakeReservation(w http.ResponseWriter, r *http.Request)
 
 	startDate, err := time.Parse(layout, sd)
 	if err != nil {
-		fmt.Println("----------------------------------StartDate has error in it-------------------------:startDate:", sd)
 		helpers.ServerError(w, err)
 		return
 	}
@@ -323,6 +370,38 @@ func (m *Repository) ChooseBungalow(w http.ResponseWriter, r *http.Request) {
 	}
 	res.BungalowID = bungalowID
 	m.App.Session.Put(r.Context(), "reservation", res)
+	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+
+}
+
+// BookBungalow takes URL parameters from get request,
+// builds a reservation, stores it in a session,
+// and redirects to make-reservation page
+func (m *Repository) BookBungalow(w http.ResponseWriter, r *http.Request) {
+
+	bungalowID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+
+	sd := r.URL.Query().Get("s")
+	ed := r.URL.Query().Get("e")
+
+	layout := "2006-01-02"
+	startDate, _ := time.Parse(layout, sd)
+	endDate, _ := time.Parse(layout, ed)
+
+	var res models.Reservation
+	bungalow, err := m.DB.GetBungalowByID(bungalowID)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Cannot find bungalow!")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
+	res.Bungalow.BungalowName = bungalow.BungalowName
+	res.BungalowID = bungalowID
+	res.StartDate = startDate
+	res.EndDate = endDate
+
+	m.App.Session.Put(r.Context(), "reservation", res)
+
 	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
 
 }

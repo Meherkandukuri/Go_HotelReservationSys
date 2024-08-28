@@ -79,8 +79,7 @@ func (m *postgresDBRepo) SearchAvailibilityByDatesByBungalowID(start, end time.T
 	from 
 		bungalow_restrictions
 	where
-		bungalow_id = $1
-		$2 <= end_date and  $3 >= start_date;
+		bungalow_id = $1 and $2 <= end_date and  $3 >= start_date;
 	`
 
 	row := m.DB.QueryRowContext(ctx, query, bungalowID, start, end)
