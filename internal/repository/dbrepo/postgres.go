@@ -68,7 +68,7 @@ values ($1,$2,$3,$4,$5,$6,$7)
 }
 
 // SearchAvailabilityByDatesByBungalowID returns true if there is availability for a date range, false if not
-func (m *postgresDBRepo) SearchAvailibilityByDatesByBungalowID(start, end time.Time, bungalowID int) (bool, error) {
+func (m *postgresDBRepo) SearchAvailabilityByDatesByBungalowID(start, end time.Time, bungalowID int) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 

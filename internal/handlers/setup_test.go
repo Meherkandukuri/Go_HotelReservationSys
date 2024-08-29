@@ -8,15 +8,16 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"testing"
 	"time"
 
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/config"
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/models"
 	"github.com/MeherKandukuri/Go_HotelReservationSys/internal/render"
-
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+
 	"github.com/justinas/nosurf"
 )
 
@@ -24,7 +25,7 @@ var app config.AppConfig
 var session *scs.SessionManager
 var pathToTemplates = "./../../templates"
 
-func getRoutes() http.Handler {
+func TestMain(m *testing.M) {
 	// Data to be available in the session
 	gob.Register(models.Reservation{})
 
@@ -34,7 +35,7 @@ func getRoutes() http.Handler {
 	infoLog := log.New(os.Stdout, "[INFO]\t", log.Ldate|log.Ltime)
 	app.InfoLog = infoLog
 
-	errorLog := log.New(os.Stdout, "[Error]\t", log.Ldate|log.Ltime|log.Lshortfile)
+	errorLog := log.New(os.Stdout, "[ERROR]\t", log.Ldate|log.Ltime|log.Lshortfile)
 	app.ErrorLog = errorLog
 
 	session = scs.New()
@@ -42,24 +43,31 @@ func getRoutes() http.Handler {
 	session.Cookie.Persist = true
 	session.Cookie.SameSite = http.SameSiteLaxMode
 	session.Cookie.Secure = app.InProduction
+
 	app.Session = session
 
 	tc, err := CreateTestTemplateCache()
 	if err != nil {
-		log.Fatal("error creating template cache", err)
+		log.Fatal("cannot create template cache")
 	}
+
 	app.TemplateCache = tc
 	app.UseCache = true
 
-	repo := NewRepo(&app)
+	repo := NewTestRepo(&app)
 	NewHandlers(repo)
 
-	render.NewTemplates(&app)
+	render.NewRenderer(&app)
+
+	os.Exit(m.Run())
+}
+
+func getRoutes() http.Handler {
 
 	mux := chi.NewRouter()
 
 	mux.Use(middleware.Recoverer)
-	mux.Use(NoSurf)
+	// mux.Use(NoSurf)
 	mux.Use(SessionLoad)
 
 	mux.Get("/", Repo.Home)
@@ -100,19 +108,17 @@ func SessionLoad(next http.Handler) http.Handler {
 	return session.LoadAndSave(next)
 }
 
-// CreateTemplateCache creates a map and stores the templates in for cachine
+// CreateTestTemplateCache creates a map and stores the tempales in for caching.
 func CreateTestTemplateCache() (map[string]*template.Template, error) {
-
 	theCache := map[string]*template.Template{}
 
-	// get all the available files *-page.tpml from folder templates
+	// get all available files *-page.html from folder ./templates
 	pages, err := filepath.Glob(fmt.Sprintf("%s/*-page.html", pathToTemplates))
-
 	if err != nil {
 		return theCache, err
 	}
 
-	// range through the slice of *-page.tpml
+	// range through the slice of *-page.html
 	for _, page := range pages {
 		name := filepath.Base(page)
 		ts, err := template.New(name).ParseFiles(page)
@@ -134,7 +140,5 @@ func CreateTestTemplateCache() (map[string]*template.Template, error) {
 
 		theCache[name] = ts
 	}
-
 	return theCache, nil
-
 }
