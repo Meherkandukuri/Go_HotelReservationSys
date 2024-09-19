@@ -32,6 +32,11 @@ func main() {
 	}
 
 	defer db.SQL.Close()
+	defer close(app.MailChan)
+
+	fmt.Println("Starting E-mail listener")
+	listenForMail()
+
 
 	fmt.Println("We are starting on port number:", portNumber)
 
@@ -53,6 +58,9 @@ func run() (*driver.DB, error) {
 	gob.Register(models.Bungalow{})
 	gob.Register(models.BungalowRestriction{})
 
+	mailChan := make(chan models.MailData)
+	app.MailChan = mailChan
+
 	// don't forget to change to true in Production!
 	app.InProduction = false
 
@@ -70,7 +78,7 @@ func run() (*driver.DB, error) {
 	app.Session = session
 
 	log.Println("Connecting to database...")
-	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=GoHotelReservationSystem user=postgres password=Hanuman@143")
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=GoHotelReservationSystem user=postgres password=")
 	if err != nil {
 		log.Fatal("No connection to database! Terminating ...")
 	}

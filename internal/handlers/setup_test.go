@@ -112,13 +112,13 @@ func SessionLoad(next http.Handler) http.Handler {
 func CreateTestTemplateCache() (map[string]*template.Template, error) {
 	theCache := map[string]*template.Template{}
 
-	// get all available files *-page.html from folder ./templates
-	pages, err := filepath.Glob(fmt.Sprintf("%s/*-page.html", pathToTemplates))
+	// get all available files *-page.tpml from folder ./templates
+	pages, err := filepath.Glob(fmt.Sprintf("%s/*-page.tpml", pathToTemplates))
 	if err != nil {
 		return theCache, err
 	}
 
-	// range through the slice of *-page.html
+	// range through the slice of *-page.tpml
 	for _, page := range pages {
 		name := filepath.Base(page)
 		ts, err := template.New(name).ParseFiles(page)
@@ -126,13 +126,13 @@ func CreateTestTemplateCache() (map[string]*template.Template, error) {
 			return theCache, err
 		}
 
-		matches, err := filepath.Glob(fmt.Sprintf("%s/*-layout.html", pathToTemplates))
+		matches, err := filepath.Glob(fmt.Sprintf("%s/*-layout.tpml", pathToTemplates))
 		if err != nil {
 			return theCache, err
 		}
 
 		if len(matches) > 0 {
-			ts, err = ts.ParseGlob(fmt.Sprintf("%s/*-layout.html", pathToTemplates))
+			ts, err = ts.ParseGlob(fmt.Sprintf("%s/*-layout.tpml", pathToTemplates))
 			if err != nil {
 				return theCache, err
 			}
